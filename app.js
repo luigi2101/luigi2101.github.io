@@ -1,14 +1,32 @@
 const fluidStudy = document.querySelector("[data-fluid-study]");
 const motionVideos = document.querySelectorAll(".motion-media-video");
 const sectionSignatures = document.querySelectorAll(".section-signature");
+const isWebKit = /AppleWebKit/i.test(navigator.userAgent) && !/(Chrome|Chromium|Edg|OPR|Android)/i.test(navigator.userAgent);
 
 motionVideos.forEach((video) => {
+  video.muted = true;
+  video.playsInline = true;
+
+  const hevcSource = video.dataset.hevcSrc;
+  if (isWebKit && hevcSource) {
+    const source = video.querySelector("source");
+    source.src = hevcSource;
+    source.type = 'video/quicktime; codecs="hvc1"';
+    video.load();
+  } else if (isWebKit) {
+    // WebKit can render VP9 video without its alpha channel. Until a real HEVC-alpha
+    // source is supplied, leaving this transparent video absent is safer than a black box.
+    video.hidden = true;
+  }
+
   video.addEventListener("error", () => {
     video.hidden = true;
   });
 });
 
-if (motionVideos.length && "IntersectionObserver" in window) {
+const playableMotionVideos = [...motionVideos].filter((video) => !video.hidden);
+
+if (playableMotionVideos.length && "IntersectionObserver" in window) {
   const videoObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -24,7 +42,7 @@ if (motionVideos.length && "IntersectionObserver" in window) {
     { rootMargin: "320px 0px" },
   );
 
-  motionVideos.forEach((video) => {
+  playableMotionVideos.forEach((video) => {
     video.pause();
     videoObserver.observe(video);
   });
