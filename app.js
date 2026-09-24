@@ -8,6 +8,28 @@ motionVideos.forEach((video) => {
   });
 });
 
+if (motionVideos.length && "IntersectionObserver" in window) {
+  const videoObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target;
+
+        if (entry.isIntersecting) {
+          video.play().catch(() => {});
+        } else {
+          video.pause();
+        }
+      });
+    },
+    { rootMargin: "320px 0px" },
+  );
+
+  motionVideos.forEach((video) => {
+    video.pause();
+    videoObserver.observe(video);
+  });
+}
+
 if (sectionSignatures.length && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
   let signatureFrame = null;
 
@@ -40,20 +62,52 @@ if (fluidStudy && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   let lastScrollY = window.scrollY;
   let scrollEnergy = 0;
   let fluidShift = 0;
+  let fluidFrame = null;
+  let fluidIsActive = false;
 
   const captureScroll = () => {
+    if (!fluidIsActive) {
+      lastScrollY = window.scrollY;
+      return;
+    }
+
     const delta = window.scrollY - lastScrollY;
     lastScrollY = window.scrollY;
     scrollEnergy = Math.max(-10, Math.min(10, scrollEnergy + delta * 0.028));
   };
 
   const animateFluid = () => {
+    if (!fluidIsActive) {
+      fluidFrame = null;
+      return;
+    }
+
     scrollEnergy *= 0.94;
     fluidShift += (scrollEnergy - fluidShift) * 0.035;
     fluidStudy.style.setProperty("--fluid-scroll-shift", `${fluidShift.toFixed(2)}px`);
-    window.requestAnimationFrame(animateFluid);
+    fluidFrame = window.requestAnimationFrame(animateFluid);
   };
 
   window.addEventListener("scroll", captureScroll, { passive: true });
-  window.requestAnimationFrame(animateFluid);
+
+  if ("IntersectionObserver" in window) {
+    const fluidObserver = new IntersectionObserver(
+      ([entry]) => {
+        fluidIsActive = entry.isIntersecting;
+        fluidStudy.classList.toggle("is-fluid-active", fluidIsActive);
+
+        if (fluidIsActive && !fluidFrame) {
+          lastScrollY = window.scrollY;
+          fluidFrame = window.requestAnimationFrame(animateFluid);
+        }
+      },
+      { rootMargin: "260px 0px" },
+    );
+
+    fluidObserver.observe(fluidStudy);
+  } else {
+    fluidIsActive = true;
+    fluidStudy.classList.add("is-fluid-active");
+    fluidFrame = window.requestAnimationFrame(animateFluid);
+  }
 }
