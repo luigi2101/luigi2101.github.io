@@ -1,0 +1,9 @@
+<svg width="1600" height="1100" viewBox="0 0 1600 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="1100" fill="#AFAFA8"/>
+  <rect x="70" y="70" width="1460" height="960" stroke="#F4F3EF" stroke-opacity="0.8"/>
+  <path d="M520 170L1080 170L1270 550L1080 930L520 930L330 550L520 170Z" fill="#1D1D1B"/>
+  <circle cx="800" cy="550" r="240" fill="#DAD9D2"/>
+  <circle cx="800" cy="550" r="120" fill="#AFAFA8"/>
+  <path d="M800 310V790M560 550H1040" stroke="#1D1D1B" stroke-width="2"/>
+  <text x="800" y="101" text-anchor="middle" fill="#F4F3EF" font-family="Arial, Helvetica, sans-serif" font-size="15" letter-spacing="5">PLACEHOLDER / REPLACE WITH PROJECT IMAGE</text>
+</svg>
