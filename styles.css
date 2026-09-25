@@ -773,87 +773,38 @@ h1 {
 }
 
 @media (max-width: 767px) {
-  /* Phone keeps the desktop editorial grids. Only scale, margins, type, and spacing change. */
-  :root {
-    --space-s: clamp(10px, 3vw, 14px);
-    --space-m: clamp(44px, 11vw, 64px);
-    --space-l: clamp(72px, 17vw, 96px);
-    --space-l-tight: clamp(66px, 15vw, 88px);
-    --space-ml: clamp(60px, 14vw, 82px);
-    --space-xl: clamp(118px, 27vw, 168px);
-    --space-closing-entry: clamp(116px, 26vw, 162px);
+  /* Phone displays the actual desktop document in a single scaled frame. */
+  html.phone-canvas-ready { overflow-x: clip; overflow-y: scroll; }
+  html.phone-canvas-ready body { overflow-x: clip; }
+
+  html.phone-canvas-ready .phone-canvas {
+    height: var(--phone-canvas-height, auto);
+    overflow: clip;
+    position: relative;
+    width: 100%;
   }
 
-  body { overflow-x: hidden; }
+  html.phone-canvas-ready .phone-canvas > .page-shell { display: none; }
 
-  .site-header { padding: 17px 20px; }
-  .wordmark { font-size: 9px; }
-
-  .hero {
-    gap: 12px;
-    padding: 70px 20px 28px;
+  html.phone-canvas-ready .phone-desktop-frame {
+    border: 0;
+    display: block;
+    height: var(--phone-canvas-source-height, 1px);
+    inset: 0 auto auto 0;
+    position: absolute;
+    transform: scale(var(--phone-canvas-scale, 1));
+    transform-origin: top left;
+    width: 1440px;
   }
-
-  .identity-panel {
-    min-height: calc(100svh - 98px);
-    padding-top: 32px;
-  }
-
-  h1 { font-size: clamp(62px, 18vw, 82px); line-height: 0.78; }
-
-  .portrait-panel {
-    height: clamp(205px, 58vw, 250px);
-    margin-right: 0;
-    width: clamp(112px, 31vw, 132px);
-  }
-
-  .about-section,
-  .project-intro,
-  .closing-section { gap: 14px; }
-
-  .about-section { min-height: 0; padding: 110px 20px 98px; }
-  .about-content { min-height: 0; }
-  .about-statement { font-size: clamp(24px, 7.1vw, 29px); line-height: 1.04; }
-  .about-statement + .about-statement { margin-top: 14px; }
-
-  .project { padding: 0 20px; }
-  .project-intro { padding: 112px 0 84px; }
-  .project h2 { font-size: clamp(34px, 10.4vw, 46px); line-height: 0.9; max-width: 100%; overflow-wrap: anywhere; }
-  .project-title-secondary { font-size: 0.6em; letter-spacing: -0.05em; }
-
-  .project-details {
-    column-gap: 14px;
-    margin-top: 42px;
-  }
-
-  .project-description { max-width: 31ch; }
-  .project-meta dd { font-size: 11px; }
-
-  .visual-study-wrap { padding: 8px; }
-  .visual-studies { gap: 6px; padding: 10px; }
-
-  .modeling-process { gap: 12px; }
-  .process-copy { padding-left: 12px; }
-  .process-copy .annotation-title { font-size: 12px; }
-  .process-copy .annotation-descriptor { font-size: 10px; }
-  .process-copy .annotation-micro { font-size: 8px; }
-  .process-copy .process-line { white-space: normal; }
-
-  .speaker-module { gap: 12px; }
-  .speaker-support-stack { gap: 10px; }
-  .packaging-bottom-pair { gap: 10px; }
-
-  .about-section .section-signature,
-  .project .section-signature,
-  .closing-section .section-signature { --signature-parallax-strength: 1; }
-
-  .closing-section { min-height: 0; padding: var(--space-closing-entry) 20px 30px; }
-  .closing-content h2 { font-size: clamp(52px, 15vw, 66px); line-height: 0.8; }
-  .closing-grid { column-gap: 14px; margin-top: 62px; row-gap: 46px; }
-  .closing-block h3 { margin-bottom: 18px; }
-  .closing-entry { font-size: 10px; }
-  .closing-entry + .closing-entry { margin-top: 23px; }
-  .closing-contact dd,
-  .closing-list { font-size: 9px; overflow-wrap: anywhere; }
-  .closing-footer { margin-top: 110px; }
 }
+
+/* The framed phone document remains a 1440 × 900 desktop viewport even after
+   its frame expands to the full page height. These are the only desktop values
+   that depend on viewport height; width-driven values already resolve at 1440px. */
+html.desktop-canvas-document { overflow-y: scroll; }
+html.desktop-canvas-document .hero { min-height: 900px; }
+html.desktop-canvas-document .identity-panel { min-height: 788px; padding-top: 45px; }
+html.desktop-canvas-document .eyebrow { margin-bottom: 63px; }
+html.desktop-canvas-document .discipline { margin-top: 49.5px; }
+html.desktop-canvas-document .portrait-panel { margin-top: 81px; }
+html.desktop-canvas-document .closing-section { min-height: 900px; }

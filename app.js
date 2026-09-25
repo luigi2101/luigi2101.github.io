@@ -1,7 +1,140 @@
 const fluidStudy = document.querySelector("[data-fluid-study]");
 const motionVideos = document.querySelectorAll(".motion-media-video");
 const sectionSignatures = document.querySelectorAll(".section-signature");
+const phoneCanvas = document.querySelector(".phone-canvas");
+const pageShell = document.querySelector(".page-shell");
 const isWebKit = /AppleWebKit/i.test(navigator.userAgent) && !/(Chrome|Chromium|Edg|OPR|Android)/i.test(navigator.userAgent);
+
+// Narrow screens intentionally display the real 1440px desktop document as one
+// scaled canvas. Rendering it in a same-origin frame lets desktop media queries,
+// typography, and every internal relationship remain exactly unchanged.
+const canonicalCanvasWidth = 1440;
+const canonicalCanvasViewportHeight = 900;
+// Measured from the canonical 1440 × 900 desktop document. It provides an
+// immediate, scroll-safe frame while the embedded document confirms its own height.
+const canonicalCanvasDocumentHeight = 17758;
+const phoneCanvasQuery = window.matchMedia("(max-width: 767px)");
+const isDesktopCanvasDocument = new URLSearchParams(window.location.search).has("desktop-canvas");
+const canvasHeightMessage = "luigi-portfolio:desktop-canvas-height";
+let phoneCanvasFrame = null;
+let phoneCanvasHeight = canonicalCanvasDocumentHeight;
+
+if (isDesktopCanvasDocument) {
+  document.documentElement.classList.add("desktop-canvas-document");
+}
+
+const getDocumentCanvasHeight = () => Math.ceil(
+  Math.max(
+    pageShell?.scrollHeight || 0,
+    document.documentElement.scrollHeight,
+    document.body?.scrollHeight || 0,
+  ),
+);
+
+const publishDesktopCanvasHeight = () => {
+  if (window.parent === window) return;
+  window.parent.postMessage(
+    { type: canvasHeightMessage, height: getDocumentCanvasHeight() },
+    window.location.origin,
+  );
+};
+
+const requestDesktopCanvasHeight = () => {
+  window.requestAnimationFrame(publishDesktopCanvasHeight);
+};
+
+const createPhoneCanvasFrame = () => {
+  if (!phoneCanvas || phoneCanvasFrame) return phoneCanvasFrame;
+
+  const frameUrl = new URL(window.location.href);
+  frameUrl.searchParams.set("desktop-canvas", "1");
+  frameUrl.hash = "";
+
+  phoneCanvasFrame = document.createElement("iframe");
+  phoneCanvasFrame.className = "phone-desktop-frame";
+  phoneCanvasFrame.title = "Luigi Zhou portfolio";
+  phoneCanvasFrame.src = frameUrl.toString();
+  phoneCanvasFrame.addEventListener("load", () => {
+    const frameDocument = phoneCanvasFrame?.contentDocument;
+    const embeddedHeight = Math.max(
+      frameDocument?.documentElement.scrollHeight || 0,
+      frameDocument?.body.scrollHeight || 0,
+    );
+    if (embeddedHeight) {
+      phoneCanvasHeight = embeddedHeight;
+      requestPhoneCanvasSync();
+    }
+  });
+  phoneCanvas.append(phoneCanvasFrame);
+  document.documentElement.classList.add("phone-canvas-ready");
+  return phoneCanvasFrame;
+};
+
+const removePhoneCanvasFrame = () => {
+  phoneCanvasFrame?.remove();
+  phoneCanvasFrame = null;
+  phoneCanvasHeight = canonicalCanvasDocumentHeight;
+  document.documentElement.classList.remove("phone-canvas-ready");
+};
+
+const syncPhoneCanvas = () => {
+  if (!phoneCanvas || !pageShell) return;
+
+  if (isDesktopCanvasDocument) {
+    publishDesktopCanvasHeight();
+    return;
+  }
+
+  if (!phoneCanvasQuery.matches) {
+    phoneCanvas.style.removeProperty("--phone-canvas-height");
+    phoneCanvas.style.removeProperty("--phone-canvas-scale");
+    phoneCanvas.style.removeProperty("--phone-canvas-source-height");
+    removePhoneCanvasFrame();
+    return;
+  }
+
+  createPhoneCanvasFrame();
+  // clientWidth excludes a classic scrollbar, so the transformed frame fits
+  // the actual scrollable page width without clipping its right edge.
+  const availableWidth = document.documentElement.clientWidth || window.innerWidth;
+  const scale = availableWidth / canonicalCanvasWidth;
+  const sourceHeight = phoneCanvasHeight || 1;
+  phoneCanvas.style.setProperty("--phone-canvas-scale", scale.toFixed(6));
+  phoneCanvas.style.setProperty("--phone-canvas-source-height", `${sourceHeight}px`);
+  phoneCanvas.style.setProperty("--phone-canvas-height", `${Math.ceil(sourceHeight * scale)}px`);
+};
+
+const requestPhoneCanvasSync = () => {
+  if (phoneCanvasFrame) return;
+  phoneCanvasFrame = window.requestAnimationFrame(() => {
+    phoneCanvasFrame = null;
+    syncPhoneCanvas();
+  });
+};
+
+window.addEventListener("message", (event) => {
+  if (
+    isDesktopCanvasDocument ||
+    event.origin !== window.location.origin ||
+    event.data?.type !== canvasHeightMessage ||
+    !Number.isFinite(event.data.height)
+  ) return;
+
+  phoneCanvasHeight = Math.ceil(event.data.height);
+  requestPhoneCanvasSync();
+});
+
+phoneCanvasQuery.addEventListener("change", requestPhoneCanvasSync);
+window.addEventListener("resize", requestPhoneCanvasSync, { passive: true });
+
+if (pageShell && "ResizeObserver" in window) {
+  new ResizeObserver(isDesktopCanvasDocument ? requestDesktopCanvasHeight : requestPhoneCanvasSync).observe(pageShell);
+}
+
+if (document.fonts?.ready) document.fonts.ready.then(isDesktopCanvasDocument ? requestDesktopCanvasHeight : requestPhoneCanvasSync);
+window.addEventListener("load", isDesktopCanvasDocument ? requestDesktopCanvasHeight : requestPhoneCanvasSync, { once: true });
+if (isDesktopCanvasDocument) requestDesktopCanvasHeight();
+else requestPhoneCanvasSync();
 
 motionVideos.forEach((video) => {
   video.muted = true;
