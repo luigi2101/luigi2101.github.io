@@ -7,7 +7,7 @@
         const isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(navigator.userAgent)
           && Math.min(screen.width, screen.height) < 768;
         const viewport = isPhone
-          ? 'width=1440, height=900'
+          ? 'width=1440'
           : 'width=device-width, initial-scale=1.0';
 
         // Write the viewport during parsing: WebKit can ignore a later mutation
