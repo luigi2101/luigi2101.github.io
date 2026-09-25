@@ -2,15 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta id="portfolio-viewport" name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(navigator.userAgent)
+          && Math.min(screen.width, screen.height) < 768;
+
+        if (isPhone) {
+          document.documentElement.dataset.phoneViewport = 'desktop';
+          document.querySelector('#portfolio-viewport').setAttribute('content', 'width=1440, height=900');
+        }
+      })();
+    </script>
     <meta name="description" content="Luigi Zhou — Graphic Designer, Visual Designer and 3D Product Visualization." />
     <title>Luigi Zhou — Graphic Designer</title>
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <div class="phone-canvas">
-      <main class="page-shell">
+    <main class="page-shell">
       <header class="site-header">
         <a class="wordmark" href="#top" aria-label="Luigi Zhou, home">LUIGI ZHOU</a>
       </header>
@@ -225,18 +235,14 @@
 
         <section class="animation-showcase" aria-label="Medical beauty product animations">
           <figure class="motion-piece motion-piece-flip">
-            <video class="motion-media motion-media-video" autoplay muted loop playsinline preload="metadata" data-hevc-src="" aria-label="Flip-open medical beauty packaging animation">
-              <source src="/media/project-03-animation/flip-open/flip-open.webm" type="video/webm; codecs=vp9" />
-            </video>
+            <video class="motion-media motion-media-video" autoplay muted loop playsinline preload="none" data-hevc-src="" data-src="/media/project-03-animation/flip-open/flip-open.webm" data-poster-src="/media/project-03-animation/flip-open/poster.png.png" data-poster-width="1280" data-poster-height="1280" aria-label="Flip-open medical beauty packaging animation"></video>
           </figure>
           <div class="motion-annotation motion-annotation-flip">
             <p class="motion-annotation-title">OPENING STUDY</p>
             <p class="motion-annotation-descriptor">Flip-open packaging /<br />product reveal</p>
           </div>
           <figure class="motion-piece motion-piece-slide">
-            <video class="motion-media motion-media-video" autoplay muted loop playsinline preload="metadata" data-hevc-src="" aria-label="Slide-open medical beauty packaging animation">
-              <source src="/media/project-03-animation/slide-open/slide-open.webm" type="video/webm; codecs=vp9" />
-            </video>
+            <video class="motion-media motion-media-video" autoplay muted loop playsinline preload="none" data-hevc-src="" data-src="/media/project-03-animation/slide-open/slide-open.webm" data-poster-src="/media/project-03-animation/slide-open/poster.png.png" data-poster-width="1920" data-poster-height="1075" aria-label="Slide-open medical beauty packaging animation"></video>
           </figure>
           <div class="motion-annotation motion-annotation-slide">
             <p class="motion-annotation-title">SLIDE STUDY</p>
@@ -455,7 +461,6 @@
 
         <p class="closing-footer">LUIGI ZHOU — PORTFOLIO 2026</p>
       </section>
-      </main>
-    </div>
+    </main>
   </body>
 </html>

@@ -561,6 +561,7 @@ h1 {
 .motion-piece { margin: 0; width: 72%; }
 .motion-media { display: block; height: auto; width: 100%; }
 .motion-media-video { background: transparent; height: 100%; object-fit: contain; width: 100%; }
+.motion-media-poster { background: transparent; height: 100%; object-fit: contain; width: 100%; }
 .motion-piece-flip { aspect-ratio: 1250 / 1299; margin-left: 4%; }
 .motion-piece-slide { aspect-ratio: 19 / 10; margin: clamp(50px, 6.5vw, 90px) 4% 0 auto; width: 67%; }
 
@@ -771,40 +772,3 @@ h1 {
 
   .closing-grid { grid-template-columns: 1.1fr 0.9fr; row-gap: clamp(64px, 8vw, 88px); }
 }
-
-@media (max-width: 767px) {
-  /* Phone displays the actual desktop document in a single scaled frame. */
-  html.phone-canvas-ready { overflow-x: clip; overflow-y: scroll; }
-  html.phone-canvas-ready body { overflow-x: clip; }
-
-  html.phone-canvas-ready .phone-canvas {
-    height: var(--phone-canvas-height, auto);
-    overflow: clip;
-    position: relative;
-    width: 100%;
-  }
-
-  html.phone-canvas-ready .phone-canvas > .page-shell { display: none; }
-
-  html.phone-canvas-ready .phone-desktop-frame {
-    border: 0;
-    display: block;
-    height: var(--phone-canvas-source-height, 1px);
-    inset: 0 auto auto 0;
-    position: absolute;
-    transform: scale(var(--phone-canvas-scale, 1));
-    transform-origin: top left;
-    width: 1440px;
-  }
-}
-
-/* The framed phone document remains a 1440 × 900 desktop viewport even after
-   its frame expands to the full page height. These are the only desktop values
-   that depend on viewport height; width-driven values already resolve at 1440px. */
-html.desktop-canvas-document { overflow-y: scroll; }
-html.desktop-canvas-document .hero { min-height: 900px; }
-html.desktop-canvas-document .identity-panel { min-height: 788px; padding-top: 45px; }
-html.desktop-canvas-document .eyebrow { margin-bottom: 63px; }
-html.desktop-canvas-document .discipline { margin-top: 49.5px; }
-html.desktop-canvas-document .portrait-panel { margin-top: 81px; }
-html.desktop-canvas-document .closing-section { min-height: 900px; }
