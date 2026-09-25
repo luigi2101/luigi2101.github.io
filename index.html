@@ -2,16 +2,17 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta id="portfolio-viewport" name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
       (() => {
         const isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(navigator.userAgent)
           && Math.min(screen.width, screen.height) < 768;
+        const viewport = isPhone
+          ? 'width=1440, height=900'
+          : 'width=device-width, initial-scale=1.0';
 
-        if (isPhone) {
-          document.documentElement.dataset.phoneViewport = 'desktop';
-          document.querySelector('#portfolio-viewport').setAttribute('content', 'width=1440, height=900');
-        }
+        // Write the viewport during parsing: WebKit can ignore a later mutation
+        // after it has already committed the device-width layout viewport.
+        document.write(`<meta name="viewport" content="${viewport}" />`);
       })();
     </script>
     <meta name="description" content="Luigi Zhou — Graphic Designer, Visual Designer and 3D Product Visualization." />
