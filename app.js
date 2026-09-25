@@ -15,8 +15,13 @@ const canonicalCanvasViewportHeight = 900;
 const canonicalCanvasDocumentHeight = 17758;
 const phoneCanvasQuery = window.matchMedia("(max-width: 767px)");
 const isDesktopCanvasDocument = new URLSearchParams(window.location.search).has("desktop-canvas");
+const isPhoneCanvasHost = !isDesktopCanvasDocument && phoneCanvasQuery.matches;
+const isEmbeddedPhoneCanvas = isDesktopCanvasDocument && window.parent !== window;
 const canvasHeightMessage = "luigi-portfolio:desktop-canvas-height";
-let phoneCanvasFrame = null;
+const canvasViewportMessage = "luigi-portfolio:desktop-canvas-viewport";
+let phoneDesktopFrame = null;
+let phoneCanvasSyncFrame = null;
+let phoneCanvasViewportFrame = null;
 let phoneCanvasHeight = canonicalCanvasDocumentHeight;
 
 if (isDesktopCanvasDocument) {
@@ -44,35 +49,36 @@ const requestDesktopCanvasHeight = () => {
 };
 
 const createPhoneCanvasFrame = () => {
-  if (!phoneCanvas || phoneCanvasFrame) return phoneCanvasFrame;
+  if (!phoneCanvas || phoneDesktopFrame) return phoneDesktopFrame;
 
   const frameUrl = new URL(window.location.href);
   frameUrl.searchParams.set("desktop-canvas", "1");
   frameUrl.hash = "";
 
-  phoneCanvasFrame = document.createElement("iframe");
-  phoneCanvasFrame.className = "phone-desktop-frame";
-  phoneCanvasFrame.title = "Luigi Zhou portfolio";
-  phoneCanvasFrame.src = frameUrl.toString();
-  phoneCanvasFrame.addEventListener("load", () => {
-    const frameDocument = phoneCanvasFrame?.contentDocument;
+  phoneDesktopFrame = document.createElement("iframe");
+  phoneDesktopFrame.className = "phone-desktop-frame";
+  phoneDesktopFrame.title = "Luigi Zhou portfolio";
+  phoneDesktopFrame.src = frameUrl.toString();
+  phoneDesktopFrame.addEventListener("load", () => {
+    const frameDocument = phoneDesktopFrame?.contentDocument;
     const embeddedHeight = Math.max(
       frameDocument?.documentElement.scrollHeight || 0,
       frameDocument?.body.scrollHeight || 0,
     );
-    if (embeddedHeight) {
+    if (embeddedHeight && embeddedHeight !== phoneCanvasHeight) {
       phoneCanvasHeight = embeddedHeight;
       requestPhoneCanvasSync();
     }
+    requestPhoneCanvasViewport();
   });
-  phoneCanvas.append(phoneCanvasFrame);
+  phoneCanvas.append(phoneDesktopFrame);
   document.documentElement.classList.add("phone-canvas-ready");
-  return phoneCanvasFrame;
+  return phoneDesktopFrame;
 };
 
 const removePhoneCanvasFrame = () => {
-  phoneCanvasFrame?.remove();
-  phoneCanvasFrame = null;
+  phoneDesktopFrame?.remove();
+  phoneDesktopFrame = null;
   phoneCanvasHeight = canonicalCanvasDocumentHeight;
   document.documentElement.classList.remove("phone-canvas-ready");
 };
@@ -105,10 +111,32 @@ const syncPhoneCanvas = () => {
 };
 
 const requestPhoneCanvasSync = () => {
-  if (phoneCanvasFrame) return;
-  phoneCanvasFrame = window.requestAnimationFrame(() => {
-    phoneCanvasFrame = null;
+  if (phoneCanvasSyncFrame) return;
+  phoneCanvasSyncFrame = window.requestAnimationFrame(() => {
+    phoneCanvasSyncFrame = null;
     syncPhoneCanvas();
+  });
+};
+
+const publishPhoneCanvasViewport = () => {
+  if (!isPhoneCanvasHost || !phoneDesktopFrame) return;
+
+  const scale = (document.documentElement.clientWidth || window.innerWidth) / canonicalCanvasWidth;
+  phoneDesktopFrame.contentWindow?.postMessage(
+    {
+      type: canvasViewportMessage,
+      top: window.scrollY / scale,
+      bottom: (window.scrollY + window.innerHeight) / scale,
+    },
+    window.location.origin,
+  );
+};
+
+const requestPhoneCanvasViewport = () => {
+  if (phoneCanvasViewportFrame) return;
+  phoneCanvasViewportFrame = window.requestAnimationFrame(() => {
+    phoneCanvasViewportFrame = null;
+    publishPhoneCanvasViewport();
   });
 };
 
@@ -120,15 +148,23 @@ window.addEventListener("message", (event) => {
     !Number.isFinite(event.data.height)
   ) return;
 
-  phoneCanvasHeight = Math.ceil(event.data.height);
+  const nextHeight = Math.ceil(event.data.height);
+  if (nextHeight === phoneCanvasHeight) return;
+  phoneCanvasHeight = nextHeight;
   requestPhoneCanvasSync();
 });
 
 phoneCanvasQuery.addEventListener("change", requestPhoneCanvasSync);
 window.addEventListener("resize", requestPhoneCanvasSync, { passive: true });
 
+if (isPhoneCanvasHost) {
+  window.addEventListener("scroll", requestPhoneCanvasViewport, { passive: true });
+}
+
 if (pageShell && "ResizeObserver" in window) {
-  new ResizeObserver(isDesktopCanvasDocument ? requestDesktopCanvasHeight : requestPhoneCanvasSync).observe(pageShell);
+  // Only the embedded desktop document reports content-height changes. The phone
+  // host never observes the wrapper it resizes, avoiding observer feedback loops.
+  if (isDesktopCanvasDocument) new ResizeObserver(requestDesktopCanvasHeight).observe(pageShell);
 }
 
 if (document.fonts?.ready) document.fonts.ready.then(isDesktopCanvasDocument ? requestDesktopCanvasHeight : requestPhoneCanvasSync);
@@ -136,7 +172,7 @@ window.addEventListener("load", isDesktopCanvasDocument ? requestDesktopCanvasHe
 if (isDesktopCanvasDocument) requestDesktopCanvasHeight();
 else requestPhoneCanvasSync();
 
-motionVideos.forEach((video) => {
+const configureMotionVideos = () => motionVideos.forEach((video) => {
   video.muted = true;
   video.playsInline = true;
 
@@ -157,9 +193,46 @@ motionVideos.forEach((video) => {
   });
 });
 
+if (isPhoneCanvasHost) {
+  // The host document is hidden behind the rendered frame. Keep its duplicate
+  // videos inert so a phone never decodes the same animations twice.
+  motionVideos.forEach((video) => {
+    video.pause();
+    video.preload = "none";
+  });
+} else {
+  configureMotionVideos();
+}
+
 const playableMotionVideos = [...motionVideos].filter((video) => !video.hidden);
 
-if (playableMotionVideos.length && "IntersectionObserver" in window) {
+const updateFrameVideos = (top, bottom) => {
+  const padding = 320;
+  playableMotionVideos.forEach((video) => {
+    const bounds = video.getBoundingClientRect();
+    const isVisible = bounds.bottom >= top - padding && bounds.top <= bottom + padding;
+    if (isVisible) video.play().catch(() => {});
+    else video.pause();
+  });
+};
+
+if (isEmbeddedPhoneCanvas) {
+  // The embedded document has a full-page viewport, so a normal
+  // IntersectionObserver would consider both animations visible forever.
+  // The phone host forwards its physical viewport instead.
+  playableMotionVideos.forEach((video) => video.pause());
+  window.addEventListener("message", (event) => {
+    if (
+      event.origin !== window.location.origin ||
+      event.source !== window.parent ||
+      event.data?.type !== canvasViewportMessage ||
+      !Number.isFinite(event.data.top) ||
+      !Number.isFinite(event.data.bottom)
+    ) return;
+
+    updateFrameVideos(event.data.top, event.data.bottom);
+  });
+} else if (!isPhoneCanvasHost && playableMotionVideos.length && "IntersectionObserver" in window) {
   const videoObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -181,7 +254,12 @@ if (playableMotionVideos.length && "IntersectionObserver" in window) {
   });
 }
 
-if (sectionSignatures.length && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+if (
+  !isPhoneCanvasHost &&
+  !isEmbeddedPhoneCanvas &&
+  sectionSignatures.length &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+) {
   let signatureFrame = null;
 
   const updateSignatureParallax = () => {
@@ -209,7 +287,12 @@ if (sectionSignatures.length && !window.matchMedia("(prefers-reduced-motion: red
   requestSignatureParallax();
 }
 
-if (fluidStudy && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+if (
+  !isPhoneCanvasHost &&
+  !isEmbeddedPhoneCanvas &&
+  fluidStudy &&
+  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+) {
   let lastScrollY = window.scrollY;
   let scrollEnergy = 0;
   let fluidShift = 0;
