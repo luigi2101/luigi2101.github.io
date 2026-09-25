@@ -728,6 +728,17 @@ h1 {
 
 .closing-footer { align-self: end; grid-column: 1 / -1; margin: clamp(120px, 18vw, 260px) 0 0; }
 
+/* A width-only mobile viewport makes WebKit's virtual height much taller than
+   the 1440 × 900 desktop reference. Freeze only height-driven geometry for the
+   native phone desktop layout; its desktop grids and width-based values remain shared. */
+html[data-phone-layout="desktop"] .hero { min-height: 900px; }
+html[data-phone-layout="desktop"] .identity-panel { min-height: 788px; padding-top: 45px; }
+html[data-phone-layout="desktop"] .eyebrow { margin-bottom: 63px; }
+html[data-phone-layout="desktop"] .discipline { margin-top: 49.5px; }
+html[data-phone-layout="desktop"] .portrait-panel { height: 423px; margin-top: 81px; }
+html[data-phone-layout="desktop"] .about-section { min-height: 675px; }
+html[data-phone-layout="desktop"] .closing-section { min-height: 900px; }
+
 @media (min-width: 768px) and (max-width: 1199px) {
   .site-header,
   .hero,

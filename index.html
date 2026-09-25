@@ -10,6 +10,10 @@
           ? 'width=1440'
           : 'width=device-width, initial-scale=1.0';
 
+        if (isPhone) {
+          document.documentElement.dataset.phoneLayout = 'desktop';
+        }
+
         // Write the viewport during parsing: WebKit can ignore a later mutation
         // after it has already committed the device-width layout viewport.
         document.write(`<meta name="viewport" content="${viewport}" />`);
