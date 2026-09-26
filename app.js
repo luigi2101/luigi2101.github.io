@@ -24,10 +24,11 @@ if (isPhoneDesktopViewport) {
 } else {
   motionVideos.forEach((video) => {
     const source = document.createElement("source");
-    source.src = video.dataset.compactSrc && useLightweightFlipVideo
-      ? video.dataset.compactSrc
+    const sourceUrl = video.dataset.mobileSrc && useLightweightFlipVideo
+      ? video.dataset.mobileSrc
       : video.dataset.src;
-    source.type = 'video/webm; codecs="vp9"';
+    source.src = sourceUrl;
+    source.type = sourceUrl.endsWith(".mp4") ? "video/mp4" : 'video/webm; codecs="vp9"';
     video.append(source);
     video.muted = true;
     video.playsInline = true;
@@ -37,7 +38,7 @@ if (isPhoneDesktopViewport) {
       source.src = hevcSource;
       source.type = 'video/quicktime; codecs="hvc1"';
       video.load();
-    } else if (isWebKit) {
+    } else if (isWebKit && sourceUrl.endsWith(".webm")) {
       // WebKit can render VP9 video without its alpha channel. Until a real HEVC-alpha
       // source is supplied, leaving this transparent video absent is safer than a black box.
       video.hidden = true;
