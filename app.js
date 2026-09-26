@@ -3,6 +3,9 @@ const motionVideos = document.querySelectorAll(".motion-media-video");
 const sectionSignatures = document.querySelectorAll(".section-signature");
 const isWebKit = /AppleWebKit/i.test(navigator.userAgent) && !/(Chrome|Chromium|Edg|OPR|Android)/i.test(navigator.userAgent);
 const isPhoneDesktopViewport = document.documentElement.dataset.phoneViewport === "desktop";
+const isPhoneDesktopLayout = document.documentElement.dataset.phoneLayout === "desktop";
+const isTabletLayout = window.matchMedia("(min-width: 768px) and (max-width: 1199px)").matches;
+const useLightweightFlipVideo = isPhoneDesktopLayout || isTabletLayout;
 
 if (isPhoneDesktopViewport) {
   // This diagnostic path prevents WebM elements from ever receiving a source on
@@ -21,7 +24,9 @@ if (isPhoneDesktopViewport) {
 } else {
   motionVideos.forEach((video) => {
     const source = document.createElement("source");
-    source.src = video.dataset.src;
+    source.src = video.dataset.compactSrc && useLightweightFlipVideo
+      ? video.dataset.compactSrc
+      : video.dataset.src;
     source.type = 'video/webm; codecs="vp9"';
     video.append(source);
     video.muted = true;
